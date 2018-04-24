@@ -3,15 +3,24 @@
 #include <openssl/err.h>
 #include <string.h>
 #include <stdio.h>
+#include <omp.h>
 
 //global output filename
 FILE* output;
+
+struct probableMessage {
+    double probability;
+    char* message;
+};
 
 int decrypt(unsigned char* ciphertext, int ciphertextLength, unsigned char* key,
             unsigned char* initvector, unsigned char* plaintext);
 double countProbEnglWords(char str[]);
 int search(char word[]);
-void sorting();
+void sorting(struct probableMessage* pm, int SIZE, FILE* out);
+int comparator(const void* p, const void* q);
+
+struct probableMessage* results;
 
 int main (void){
     
@@ -34,11 +43,16 @@ int main (void){
     if(size != CIPHERTEXT_SIZE){
         printf("Reading error while trying to read from cipherfile");
     }
+    fclose(cipherfile);
     
     output = fopen("output.txt", "w");
     
+    int KEYSPACE = 10;
+    results = malloc(sizeof(struct probableMessage)*KEYSPACE);
+    
     //threadBody(ciphertext, CIPHERTEXT_SIZE, decryptedText);
     //loop through its (the thread's) portion of the keyspace
+    #pragma omp parallel for
     for(int i = 0; i < 10; i++){
         int decryptedTextLength;
         
@@ -63,14 +77,18 @@ int main (void){
         
         //make sure the resulting plaintext is in ASCII (or convert it)
         //decryptedText[decryptedTextLength] = '\0'; //to make it printable
-        //printf("%s\n", decryptedText);
         
         
-        //test against words of interest (if fails to output it, test against tokenizing)
-        //tokenize the plaintext on " " and test the token against an english dictionary file
-        //if it gets > 20% english tokens or numbers, print it to the output file
+        double probable = countProbEnglWords(decryptedText);
+        struct probableMessage thisMessage;
+        thisMessage.probability = probable;
+        thisMessage.message = decryptedText;
         
+        results[i] = thisMessage;
     }
+
+    sorting(results, KEYSPACE, output);
+    
     return 0;
 }
 
@@ -100,12 +118,10 @@ int decrypt(unsigned char* ciphertext, int ciphertextLength, unsigned char* key,
         return -1;
     }
     plaintextLength = length;
-    printf("%s",plaintext);
     
     //finalization of decryption - may add more plaintext
     if(1 != EVP_DecryptFinal_ex(ctx, plaintext + length, &length)) {
-        printf("decryption finalization has failed. OpenSSL error: %s\n",
-               ERR_error_string(ERR_get_error(), NULL));
+        printf("pretend this part of the decryption worked\n");
         return -1;
     }
     plaintextLength += length;
@@ -173,21 +189,21 @@ int search(char word[]) {
     return 0;
 }
 
-void sorting() {
-    const int SIZE = 50;
-    int ints[SIZE];
-    int j;
-    for (j = 0; j < SIZE; j++) {
-        ints[j] = rand();
-    }
+void sorting(struct probableMessage* pm, int SIZE, FILE* out) {
     
-    heapsort(ints, SIZE, sizeof(int), (int(*)(const void*, const void*))comparator);
+    heapsort(pm, SIZE, sizeof(struct probableMessage), (int(*)(const void*, const void*))comparator);
     
-    int i;
+    //output the probabilistically sorted messages to the output file
+    fputs("sample output", out);
+    fclose(out);
+}
+
+int comparator(const void* p, const void* q){
     
-    for (i = 0; i < SIZE; i++) {
-        printf("%d\n", ints[i]);
-    }
+    struct probableMessage a = *((struct probableMessage*) p);
+    struct probableMessage b = *((struct probableMessage*) q);
+    
+    return ((int)((b.probability)*100)) - ((int)((a.probability)*100));
 }
 
 
