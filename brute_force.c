@@ -23,39 +23,41 @@ int comparator(const void* p, const void* q);
 struct probableMessage* results;
 
 int main (void){
-    
+
     //initialize output file to blank
     FILE* cipherfile = fopen("cipher.txt", "rb");
     if (cipherfile == NULL){
         printf("cipher.txt was not found, make sure it is initialized");
         return 0;
     }
-    
+
     //read in the ciphertext from file
     fseek(cipherfile, 0L, SEEK_END); //to find the size of the file
     int const CIPHERTEXT_SIZE = ftell(cipherfile); //sizeof ciphertext in the file
     rewind(cipherfile); //puts the file cursor back to the beginning of the file
-    
+
     unsigned char ciphertext[CIPHERTEXT_SIZE];
-    unsigned char decryptedText[CIPHERTEXT_SIZE + 1];
-    
+
     int size = fread(ciphertext,sizeof(unsigned char),CIPHERTEXT_SIZE,cipherfile);
     if(size != CIPHERTEXT_SIZE){
         printf("Reading error while trying to read from cipherfile");
     }
     fclose(cipherfile);
-    
+
     output = fopen("output.txt", "w");
     
-    int KEYSPACE = 10;
+    int KEYSPACE = 5;
     results = malloc(sizeof(struct probableMessage)*KEYSPACE);
     
-    //threadBody(ciphertext, CIPHERTEXT_SIZE, decryptedText);
+//    threadBody(ciphertext, CIPHERTEXT_SIZE, decryptedText);
     //loop through its (the thread's) portion of the keyspace
     #pragma omp parallel for
-    for(int i = 0; i < 10; i++){
+    for(int i = 0; i < 5; i++){
         int decryptedTextLength;
         
+            unsigned char decryptedText[CIPHERTEXT_SIZE + 1];
+//        unsigned char decryptedText[100];
+        unsigned char *decryption;
         
         //use keys 000...00-000...09 for 256 bit key (32 characters)
        /* int keynum = i;
@@ -77,17 +79,45 @@ int main (void){
         
         //make sure the resulting plaintext is in ASCII (or convert it)
         //decryptedText[decryptedTextLength] = '\0'; //to make it printable
+//        if (i == 0) {
+//            decryption = "I am a message";
+//        }
+//        if (i == 1) {
+//            decryption = "I amnt message";
+//        }
+//        if (i == 2) {
+//            decryption = "Imaybe message";
+//        }
+//        if (i == 3) {
+//            decryption = "I message?";
+//        }
+//        if (i == 4) {
+//            decryption = "Iwamfadwsde messffegage";
+//        }
+//
+        decryption = decryptedText;
         
-        
-        double probable = countProbEnglWords(decryptedText);
         struct probableMessage thisMessage;
+        thisMessage.message = decryption;
+        printf("\nbefore: %s\n", thisMessage.message);
+        strcpy(decryptedText, decryption);
+        double probable = countProbEnglWords(decryptedText);
         thisMessage.probability = probable;
-        thisMessage.message = decryptedText;
+        printf("after: %s\n", thisMessage.message);
+        
+        
+        printf("%f\n", probable);
         
         results[i] = thisMessage;
+        int k = 0;
+        for (k = 0; k <= i; k++) {
+            printf("RESULT %i: %s\n", i, results[k]);
+        }
     }
 
     sorting(results, KEYSPACE, output);
+    
+    
     
     return 0;
 }
@@ -190,11 +220,22 @@ int search(char word[]) {
 }
 
 void sorting(struct probableMessage* pm, int SIZE, FILE* out) {
-    
+    printf("About to sort!\n");
     heapsort(pm, SIZE, sizeof(struct probableMessage), (int(*)(const void*, const void*))comparator);
+    printf("Just sorted!\n");
     
-    //output the probabilistically sorted messages to the output file
-    fputs("sample output", out);
+    int k;
+    for (k = 0; k < 5; k++) {
+        char * msg = "";
+        asprintf(&msg,"%d: %f:\n\t%s\n", k, pm[k].probability, pm[k].message);
+        printf("%s", msg);
+        
+        //output the probabilistically sorted messages to the output file
+        fputs(msg, out);
+    }
+    
+    
+    
     fclose(out);
 }
 
