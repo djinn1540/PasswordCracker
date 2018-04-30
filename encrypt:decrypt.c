@@ -52,10 +52,15 @@ void insertNum(int num, char* str, int strlen){
 void file_encrypt_decrypt(cipher_params_t *params, FILE *ifp, FILE *ofp){
     /* Allow enough space in output buffer for additional block */
     int cipher_block_size = EVP_CIPHER_block_size(params->cipher_type);
+    printf("cipher: %d\n",cipher_block_size);
     unsigned char in_buf[BUFSIZE], out_buf[BUFSIZE + cipher_block_size];
+    
+    
     
     int num_bytes_read, out_len;
     EVP_CIPHER_CTX *ctx;
+    
+    printf("woop2\n");
     
     ctx = EVP_CIPHER_CTX_new();
     if(ctx == NULL){
@@ -63,25 +68,32 @@ void file_encrypt_decrypt(cipher_params_t *params, FILE *ifp, FILE *ofp){
                 ERR_error_string(ERR_get_error(), NULL));
         //cleanup(params, ifp, ofp, ERR_EVP_CTX_NEW);
     }
-    
+    printf("woop3\n");
     /* Don't set key or IV right away; we want to check lengths */
     if(!EVP_CipherInit_ex(ctx, params->cipher_type, NULL, NULL, NULL, params->encrypt)){
         fprintf(stderr, "ERROR: EVP_CipherInit_ex failed. OpenSSL error: %s\n",
                 ERR_error_string(ERR_get_error(), NULL));
         //cleanup(params, ifp, ofp, ERR_EVP_CIPHER_INIT);
     }
-    
-    OPENSSL_assert(EVP_CIPHER_CTX_key_length(ctx) == AES_256_KEY_SIZE);
-    OPENSSL_assert(EVP_CIPHER_CTX_iv_length(ctx) == AES_BLOCK_SIZE);
+    printf("woop4\n");
+    printf("%d\n",AES_256_KEY_SIZE);
+    printf("%d\n", EVP_CIPHER_CTX_key_length(ctx));
+    OPENSSL_assert((int)EVP_CIPHER_CTX_key_length(ctx) == (int)AES_256_KEY_SIZE);
+    printf("innerwoop");
+    OPENSSL_assert((int)EVP_CIPHER_CTX_iv_length(ctx) == (int)AES_BLOCK_SIZE);
+    printf("kokokokoko");
     
     /* Now we can set key and IV */
     if(!EVP_CipherInit_ex(ctx, NULL, NULL, params->key, params->iv, params->encrypt)){
         fprintf(stderr, "ERROR: EVP_CipherInit_ex failed. OpenSSL error: %s\n",
                 ERR_error_string(ERR_get_error(), NULL));
+        printf("eeeeekekekekeke");
         EVP_CIPHER_CTX_cleanup(ctx);
         //cleanup(params, ifp, ofp, ERR_EVP_CIPHER_INIT);
     }
     
+    
+    printf("woop5\n");
     do {
         // Read in data in blocks until EOF. Update the ciphering with each read.
         num_bytes_read = fread(in_buf, sizeof(unsigned char), BUFSIZE, ifp);
@@ -91,6 +103,7 @@ void file_encrypt_decrypt(cipher_params_t *params, FILE *ifp, FILE *ofp){
             EVP_CIPHER_CTX_cleanup(ctx);
             //cleanup(params, ifp, ofp, errno);
         }
+        printf("woop6\n");
         //update error
         if(!EVP_CipherUpdate(ctx, out_buf, &out_len, in_buf, num_bytes_read)){
             fprintf(stderr, "ERROR: EVP_CipherUpdate failed. OpenSSL error: %s\n",
@@ -100,6 +113,7 @@ void file_encrypt_decrypt(cipher_params_t *params, FILE *ifp, FILE *ofp){
             out_len = 1;
             //cleanup(params, ifp, ofp, ERR_EVP_CIPHER_UPDATE);
         }
+        printf("woop7\n");
         fwrite(out_buf, sizeof(unsigned char), out_len, ofp);
         //write error
         if (ferror(ofp)) {
@@ -109,7 +123,7 @@ void file_encrypt_decrypt(cipher_params_t *params, FILE *ifp, FILE *ofp){
         }
     
     } while (num_bytes_read >= BUFSIZE);
-    
+    printf("woop8\n");
     /* Now cipher the final block and write it out to file */
     if(!EVP_CipherFinal_ex(ctx, out_buf, &out_len)){
         //bad decrypt - throws an error if the decrypt func finds something undexpected -> made our heapsort on the decrpyt results almost useless
@@ -119,6 +133,7 @@ void file_encrypt_decrypt(cipher_params_t *params, FILE *ifp, FILE *ofp){
         //cleanup(params, ifp, ofp, ERR_EVP_CIPHER_FINAL);
     }
         //this is where we write to the file that is read into the buffer we want to tokenize
+    printf("woop9\n");
     fwrite(out_buf, sizeof(unsigned char), out_len, ofp);
     
     if (ferror(ofp)) {
@@ -131,13 +146,8 @@ void file_encrypt_decrypt(cipher_params_t *params, FILE *ifp, FILE *ofp){
 
 
 int main(int argc, char *argv[]) {
-    FILE *f_input, *f_enc, *f_dec,*outfile;
-    
-    /* Make sure user provides the input file */
-    if (argc != 2) {
-        printf("Usage: %s /path/to/file\n", argv[0]);
-        return -1;
-    }
+    FILE*f_enc, *f_dec,*outfile;
+  
     
     cipher_params_t *params = (cipher_params_t *)malloc(sizeof(cipher_params_t));
     if (!params) {
@@ -152,54 +162,17 @@ int main(int argc, char *argv[]) {
     /* Initialization Vector */
     unsigned char iv[AES_BLOCK_SIZE];
     
-    /* Generate cryptographically strong pseudo-random bytes for key and IV*/
-    if (!RAND_bytes(key, sizeof(key)) || !RAND_bytes(iv, sizeof(iv))) {
-        // OpenSSL reports a failure, act accordingly
-        fprintf(stderr, "ERROR: RAND_bytes error: %s\n", strerror(errno));
-        return errno;
-    }
-
-    /* our code for making a key that we can control*/
-    char* foo;
-    foo = (char*)malloc(sizeof(char)*AES_256_KEY_SIZE);
-    insertNum(1, foo, AES_256_KEY_SIZE); // the int is the number in the key that will be prepended with 0's
-    memcpy(key, foo, AES_256_KEY_SIZE);
-    free(foo);
+    char* temp;
+    temp = (char*)malloc(sizeof(char)*AES_BLOCK_SIZE);
+    insertNum(3, temp, AES_BLOCK_SIZE);
     
-    params->key = key;
-    params->iv = iv;
-    
-    /* Indicate that we want to encrypt */
-    params->encrypt = 1;
-    
-    /* Set the cipher type you want for encryption-decryption */
-    params->cipher_type = EVP_aes_256_cbc();
-    
-    /* Open the input file for reading in binary ("rb" mode) */
-    f_input = fopen(argv[1], "rb");
-    if (!f_input) {
-        /* Unable to open file for reading */
-        fprintf(stderr, "ERROR: fopen error: %s\n", strerror(errno));
-        return errno;
-    }
-    
-    /* Open and truncate file to zero length or create ciphertext file for writing */
-    f_enc = fopen("encrypted_file", "wb");
-    if (!f_enc) {
-        /* Unable to open file for writing */
-        fprintf(stderr, "ERROR: fopen error: %s\n", strerror(errno));
-        return errno;
-    }
-    
-    /* Encrypt the given file */
-    file_encrypt_decrypt(params, f_input, f_enc);
-    
-    /* Encryption done, close the file descriptors */
-    fclose(f_input);
-    fclose(f_enc);
+    memcpy(iv, temp, AES_BLOCK_SIZE);
+    free(temp);
     
     /* Decrypt the file */
     /* Indicate that we want to decrypt */
+    /* Set the cipher type you want for encryption-decryption */
+    params->cipher_type = EVP_aes_256_cbc();
     params->encrypt = 0;
     
     
@@ -208,6 +181,7 @@ int main(int argc, char *argv[]) {
     results = (struct probableMessage*)malloc(sizeof(struct probableMessage)*KEYSPACESIZE);
     
     fflush(stdout);
+    
     
     //here is where we insert our loop for key iteration
 
@@ -221,6 +195,7 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "ERROR: fopen error: %s\n", strerror(errno));
             return errno;
         }
+        
     
         //make a guessed key based on the iteration index of the loop
         unsigned char* guessedKey[AES_256_KEY_SIZE];
@@ -241,6 +216,8 @@ int main(int argc, char *argv[]) {
         char filename[36];
         sprintf(filename, "decry%d", i);
     
+        printf("woop\n");
+        
         outfile = fopen(filename, "wb");
         if (!outfile) {
             /* Unable to open file for writing */
@@ -248,9 +225,12 @@ int main(int argc, char *argv[]) {
             return errno;
         }
         
+        
         /* Decrypt the given file */
         file_encrypt_decrypt(params, f_input2, outfile); //f_dec instead of decrypted_phrase to print to file
         fclose(outfile);
+        
+        printf("heyyyyyyyyyyyaaaaaaaaaaadodododoow");
         
         outfile = fopen(filename, "rb");
         if (!outfile) {
@@ -258,6 +238,9 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "ERROR: fopen error: %s\n", strerror(errno));
             return errno;
         }
+        
+        
+        //was here
         
         decrypted_phrase = readMessageFromFile(outfile);
         char* decrypted_phrase_copy;
