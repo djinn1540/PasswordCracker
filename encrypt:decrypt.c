@@ -68,14 +68,16 @@ void file_encrypt_decrypt(cipher_params_t *params, FILE *ifp, FILE *ofp){
         //cleanup(params, ifp, ofp, ERR_EVP_CIPHER_INIT);
     }
     
-    while(1){
+    do {
         // Read in data in blocks until EOF. Update the ciphering with each read.
         num_bytes_read = fread(in_buf, sizeof(unsigned char), BUFSIZE, ifp);
+        //read error
         if (ferror(ifp)){
             fprintf(stderr, "ERROR: fread error: %s\n", strerror(errno));
             EVP_CIPHER_CTX_cleanup(ctx);
             //cleanup(params, ifp, ofp, errno);
         }
+        //update error
         if(!EVP_CipherUpdate(ctx, out_buf, &out_len, in_buf, num_bytes_read)){
             fprintf(stderr, "ERROR: EVP_CipherUpdate failed. OpenSSL error: %s\n",
                     ERR_error_string(ERR_get_error(), NULL));
@@ -83,16 +85,14 @@ void file_encrypt_decrypt(cipher_params_t *params, FILE *ifp, FILE *ofp){
             //cleanup(params, ifp, ofp, ERR_EVP_CIPHER_UPDATE);
         }
         fwrite(out_buf, sizeof(unsigned char), out_len, ofp);
+        //write error
         if (ferror(ofp)) {
             fprintf(stderr, "ERROR: fwrite error: %s\n", strerror(errno));
             EVP_CIPHER_CTX_cleanup(ctx);
             //cleanup(params, ifp, ofp, errno);
         }
-        if (num_bytes_read < BUFSIZE) {
-            /* Reached End of file */
-            break;
-        }
-    }
+    
+    } while (num_bytes_read >= BUFSIZE);
     
     /* Now cipher the final block and write it out to file */
     if(!EVP_CipherFinal_ex(ctx, out_buf, &out_len)){
@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
     
     
     //here is where we insert our loop for key iteration
-    for(int i = 0; i < 10; i++){
+    for(int i = 0; i < 10; i++) {
     
         //make a guessed key based on the iteration index of the loop
         unsigned char* guessedKey[AES_256_KEY_SIZE];
@@ -230,4 +230,27 @@ int main(int argc, char *argv[]) {
     free(params);
     
     return 0;
+}
+
+/*
+ To Read from decrypted file.
+ Run into some weirdness with certain chracters/ lengths of text specifically on the third line of text.
+ */
+char *readMessageFromFile(FILE *out) {
+    char *message;
+    
+    fseek(out, 0L, SEEK_END);
+    long s = ftell(out);
+    rewind(out);
+    message = malloc(s);
+    if ( message != NULL )
+    {
+        fread(message, s, 1, out);
+        // we can now close the file
+        fclose(out);
+        out = NULL;
+        
+        return message;
+    }
+    return NULL;
 }
