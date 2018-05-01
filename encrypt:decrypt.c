@@ -34,7 +34,7 @@ struct probableMessage* results;
 #define AES_BLOCK_SIZE 16
 #define BUFSIZE 100
 
-int logging = 1;
+int logging = 0;
 
 void insertNum(int num, char* str, int strlen){
     int digit = 0;
@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
     
     
     
-    int const KEYSPACESIZE = 10;
+    int const KEYSPACESIZE = 100;
     results = (struct probableMessage*)malloc(sizeof(struct probableMessage)*KEYSPACESIZE);
     
     fflush(stdout);
