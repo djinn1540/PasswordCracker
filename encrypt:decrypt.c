@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
     
     
     
-    int const KEYSPACESIZE = 10;
+    int const KEYSPACESIZE = 100;
     results = (struct probableMessage*)malloc(sizeof(struct probableMessage)*KEYSPACESIZE);
     
     fflush(stdout);
@@ -264,7 +264,6 @@ int main(int argc, char *argv[]) {
         decrypted_phrase_copy = (char *)malloc(sizeof(*decrypted_phrase));
         strcpy(decrypted_phrase_copy, decrypted_phrase);
         fclose(outfile);
-        printf("%s", decrypted_phrase_copy);
         
         double percent = countProbEnglWords(decrypted_phrase);
         struct probableMessage currentMessage;
@@ -286,9 +285,6 @@ int main(int argc, char *argv[]) {
     }
     
     sorting(results, KEYSPACESIZE, f_dec);
-    //for(int i=0;i < KEYSPACESIZE; i++){
-     //   free(results[i].message);
-    //}
     
     /* Close the open file descriptors */
     
@@ -315,7 +311,6 @@ double countProbEnglWords(char str[]) {
         strcpy(c[possible_words], token);
         token = strtok(str, " ");
         if (search(c[possible_words])) {
-            //printf("A WORD!: %s\n", c[possible_words]);
             words++;
         }
         possible_words++;
@@ -363,7 +358,7 @@ void sorting(struct probableMessage* pm, int SIZE, FILE* out) {
     
     int k;
     for (k = 0; k < (int)(.4 * SIZE); k++) {
-        //if(pm[k].probability > 0.0){
+        
             char * msg = "";
             asprintf(&msg,"%d: %f:\n\t%s\n", k, pm[k].probability, pm[k].message);
             printf("%s", msg);
@@ -372,7 +367,7 @@ void sorting(struct probableMessage* pm, int SIZE, FILE* out) {
             fputs(msg, out);
         free(pm[k].message);
         fflush(out);
-       // }
+       
     }
     
     
