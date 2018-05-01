@@ -131,6 +131,7 @@ void file_encrypt_decrypt(cipher_params_t *params, FILE *ifp, FILE *ofp){
     }
         //this is where we write to the file that is read into the buffer we want to tokenize
     plog("woop9\n");
+    out_buf[out_len] = '\0';
     fwrite(out_buf, sizeof(unsigned char), out_len, ofp);
     
     if (ferror(ofp)) {
@@ -242,7 +243,6 @@ int main(int argc, char *argv[]) {
         
         decrypted_phrase = readMessageFromFile(outfile);
         char* decrypted_phrase_copy;
-        //printf("%lu", strlen(decrypted_phrase));
         decrypted_phrase_copy = (char *)malloc(sizeof(char) *strlen(decrypted_phrase));
         strcpy(decrypted_phrase_copy, decrypted_phrase);
         printf("######%d#######%s\n", i, decrypted_phrase_copy);
