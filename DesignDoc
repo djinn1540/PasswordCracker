@@ -2,35 +2,45 @@ Password Cracker Design Document
 Marcus Daly mrd109
 Jamie Flynn gjf20
 
+
 Files:
 
-	-init.c: c program to encrypt a custom message with a preset key and initialization vector.  The encrypted text is output to cipher.txt
-	-cipher.txt: holds the encrypted text that brute_force.c will decrypt
-	-brute_force.c: takes cipher.txt as input and tries all keys in keyspace for decrypting the ciphertext in cipher.txt.  We use concurrent programming to accomplish this in a timely manner. The resulting messages from each key-try are sorted based on how closely they resemble english; they are then output to the output.txt file.
-	-words.txt: Dictionary of english words and some others, from github.com/dwyl/english-words
+	-encrypt.c: C program to encrypt a custom message with a preset key and initialization vector.
+	-decrypt.c: Tries all keys in keyspace for decrypting the ciphertext.  We use concurrent programming to accomplish this in a timely manner. The resulting messages from each key-try are sorted based on how closely they resemble english; they are then output in a sorted list to probable_decryptions.
+	-words.txt: Dictionary of english words and some others; from github.com/dwyl/english-words.
+	-probable_decryptions: Ordered list of the best decryptions along with their ratio of English/Total words (what they are sorted by).
+	-decryn (Where n is an integer): the results of the nth decryption.
+	-encrypted_file: File that holds the encrypted written by encrypt/decrypt.c that will later be decrypted by encrypt/decrypt.c
+	-input.txt: The file containing the message to be encrypted by encrypt.c
+
+
+Required Libraries:
+
+	-OpenSSL
+	-OMP
 
 
 Major Data Structures:
 
+	-_cipher_params_t: a struct to keep parameters for a specific cipher
 	-probableMessage: a struct that pairs a probability(double) with a message(character array)
-	-array of probableMessage: an array of our custom struct that we sort in the "sorting" function.
+	-array of probableMessage: an array of our custom struct that we sort in the "sorting" function. Stores the best results of decryption.
 
-Sample Output:
-	the output will be a sorted list of potential messages, with the most english-like at the top.
 
-hello john 1 a beef
-hwd grace food empanada 0x34
-?? lollipop mahogany fo4l2w
-l3g1t 7un35 4 u dawg
+Example of Actual Output:
+	(See probable_decryptions)
+
 
 Project Breakdown:
-Marcus Daly:
-	-countProbEnglWords
-	-search
-	-sorting
-	-comparator
-
-Jamie Flynn:
-	-init.c
-	-decrypt
-	-main in brute_force.c
+	Marcus Daly:
+		-countProbEnglWords
+		-search
+		-sorting
+		-comparator
+		-readMessageFromFile
+	
+	Jamie Flynn:
+		-encrypt.c
+		-main in decrypt
+		-file_encrypt_decrypt
+		-insertNum

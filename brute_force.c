@@ -15,6 +15,7 @@ struct probableMessage {
 
 int decrypt(unsigned char* ciphertext, int ciphertextLength, unsigned char* key,
             unsigned char* initvector, unsigned char* plaintext);
+char *readMessageFromFile(FILE *out);
 double countProbEnglWords(char str[]);
 int search(char word[]);
 void sorting(struct probableMessage* pm, int SIZE, FILE* out);

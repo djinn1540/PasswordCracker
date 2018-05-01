@@ -1,5 +1,7 @@
-all:
-	gcc init.c -o init -lcrypto
-	gcc brute_force.c -o bf -lcrypto -fopenmp
-	gcc encrypt/decrypt.c -o test -lcrypto
-
+all: encrypt decrypt
+encrypt:
+	gcc encrypt.c -o encrypt -lcrypto
+decrypt:
+	gcc decrypt.c -o decrypt -lcrypto
+clean:
+	rm encrypt decrypt
