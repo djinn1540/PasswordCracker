@@ -3,3 +3,5 @@ encrypt:
 	gcc encrypt.c -o encrypt -lcrypto
 decrypt:
 	gcc decrypt.c -o decrypt -lcrypto
+clean:
+	rm encrypt decrypt
