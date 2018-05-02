@@ -9,12 +9,21 @@
 \
 Gregory Flynn gjf20, Marcus Daly mrd109\
 \
-The password cracker is for educational purposes only.  The password cracker \
+The password cracker is for educational purposes only.\
 \
-To encrypt a message, we used init.c (through the openssl library) to encrypt a desired message and save it in cipher.txt.\
-1) run init, entering the desired message to be encrypted as a argument, the cipher text will be output to cipher.txt\
-2) run the brute_force program on an HPCC, ensuring that cipher.txt is in the local directory\
-3) look at output.txt to see the potential messages, they are ranked by how much of the text is english\
+To encrypt a message,\
+1) place the message to be encrypted into input.txt (or in a file of your choosing - just use that filename where you see input.txt in the following step).\
+2) run encrypt, entering input.txt as a argument, the cipher text will be output to encrypted_file\
+\
+Optionally: You may change which number key is used to encrypt by changing USEKEY (default 1) in encrypt.c to any number < KEYSPACESIZE (default 1000, located in decrypt.c)\
+\
+To decrypt a message,\
+1) run decrypt on a multicore OS, ensuring that encrypted_file is in the local directory\
+2) look at probable_decryptions to see the potential messages, they are ranked by percentage of \'93words\'94 in the text that are in words.txt\
+\
+Optionally: You may change the value of KEYSPACESIZE(default 1000) to increase the number of key tries\
 \
 Unfortunately, the final judgement as to what is the true decrypted text must be made by the user.  However, it is likely the user knows what they are looking for, and there should not be nearly as many options to sort through.\
+\
+\
 }

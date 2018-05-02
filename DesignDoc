@@ -5,14 +5,15 @@ Jamie Flynn gjf20
 
 Files:
 
-	-encrypt.c: C program to encrypt a custom message with a preset key and initialization vector.
+	-encrypt.c: C program to encrypt a custom message with a preset key and initialization vector. Requires the custom message file to be a command line argument.
 	-decrypt.c: Tries all keys in keyspace for decrypting the ciphertext.  We use concurrent programming to accomplish this in a timely manner. The resulting messages from each key-try are sorted based on how closely they resemble english; they are then output in a sorted list to probable_decryptions.
 	-words.txt: Dictionary of english words and some others; from github.com/dwyl/english-words.
 	-probable_decryptions: Ordered list of the best decryptions along with their ratio of English/Total words (what they are sorted by).
-	-decryn (Where n is an integer): the results of the nth decryption.
-	-encrypted_file: File that holds the encrypted written by encrypt/decrypt.c that will later be decrypted by encrypt/decrypt.c
+	-decryn (Where n is an integer): the results of the nth decryption. 
+		NOTE: there will be a decry file for each key tried, if this is an issue, you may decrease KEYSPACESIZE (in decrypt.c) to lower the number of decry's.
+	-encrypted_file: File that holds the encrypted text written by encrypt.c that will later be decrypted by decrypt.c
 	-input.txt: The file containing the message to be encrypted by encrypt.c
-
+	-README.txt: introduction and instructions on how to use encrypt and decrypt
 
 Required Libraries:
 
@@ -22,13 +23,32 @@ Required Libraries:
 
 Major Data Structures:
 
-	-_cipher_params_t: a struct to keep parameters for a specific cipher
+	-KEYSPACESIZE: (in decrypt.c) this is how many keys we are going to check starting from key = "000 ... 000" such that there are 32 digits to key = "00...(KEYSPACESIZE-1)" also so there are 32 digits.
+	-USEKEY: (in encrypt.c) this is the number that will be used to generate the key (default is 1), a user can change this to any number less than KEYSPACESIZE to prove that decrypt correctly uses brute force.
+	-_cipher_params_t: a struct to keep parameters for a specific cipher: key, initialization vector, the type of cipher, and whether file_encrypt_decrypt should encrypt or decrypt.
 	-probableMessage: a struct that pairs a probability(double) with a message(character array)
 	-array of probableMessage: an array of our custom struct that we sort in the "sorting" function. Stores the best results of decryption.
 
 
 Example of Actual Output:
-	(See probable_decryptions)
+0: 1.000000:
+	h
+
+1: 1.000000:
+	P
+
+2: 0.666667:
+	hello wally x5!!
+
+
+3: 0.500000:
+?? Cw   TêA⍯?M?
+
+4: 0.500000:
+	䠃5?a-îB? p
+
+From the output, one can see that the probable outputs are ordered by percentage
+of words that are contained within the dictionary (mostly english, but includes common strings that are not words).  By the user's judgement, the original message is likely result #2: "hello wally x5!!\n" because the other results only have english words that are one or two characters in length.
 
 
 Project Breakdown:
@@ -38,9 +58,11 @@ Project Breakdown:
 		-sorting
 		-comparator
 		-readMessageFromFile
+		-debugging
 	
 	Jamie Flynn:
-		-encrypt.c
-		-main in decrypt
-		-file_encrypt_decrypt
+		-adaptation of code from https://medium.com/@amit.kulkarni/encrypting-decrypting-a-file-using-openssl-evp-b26e0e4d28d4
+		-building a key from a loop index
+		-parallel organization of key attempts
 		-insertNum
+		-debugging

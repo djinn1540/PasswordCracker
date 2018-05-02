@@ -33,6 +33,8 @@ struct probableMessage* results;
 #define AES_BLOCK_SIZE 16
 #define BUFSIZE 100
 
+int const USEKEY = 1;
+
 void insertNum(int num, char* str, int strlen){
     int digit = 0;
     for(int i = strlen-1; i >=0; i--){
@@ -49,7 +51,7 @@ void insertNum(int num, char* str, int strlen){
 }
 
 
-void file_encrypt(cipher_params_t *params, FILE *ifp, FILE *ofp){
+void file_encrypt_decrypt(cipher_params_t *params, FILE *ifp, FILE *ofp){
     /* Allow enough space in output buffer for additional block */
     int cipher_block_size = EVP_CIPHER_block_size(params->cipher_type);
     unsigned char in_buf[BUFSIZE], out_buf[BUFSIZE + cipher_block_size];
@@ -162,7 +164,7 @@ int main(int argc, char *argv[]) {
     /* our code for making a key that we can control*/
     char* foo;
     foo = (char*)malloc(sizeof(char)*AES_256_KEY_SIZE);
-    insertNum(1, foo, AES_256_KEY_SIZE); // the int is the number in the key that will be prepended with 0's
+    insertNum(USEKEY, foo, AES_256_KEY_SIZE); // the int is the number in the key that will be prepended with 0's
     memcpy(key, foo, AES_256_KEY_SIZE);
     free(foo);
     
@@ -192,7 +194,7 @@ int main(int argc, char *argv[]) {
     }
     
     /* Encrypt the given file */
-    file_encrypt(params, f_input, f_enc);
+    file_encrypt_decrypt(params, f_input, f_enc);
     
     /* Encryption done, close the file descriptors */
     fclose(f_input);
